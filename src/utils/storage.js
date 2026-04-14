@@ -158,6 +158,22 @@ export const Storage = {
     this.set('saved_articles', articles);
   },
 
+  // Lesson notes / journal
+  getLessonNotes(lessonId) {
+    const notes = this.get('lesson_notes', {});
+    return notes[lessonId] || { text: '', aiResponse: null, lastUpdated: null };
+  },
+
+  setLessonNotes(lessonId, data) {
+    const notes = this.get('lesson_notes', {});
+    notes[lessonId] = { ...notes[lessonId], ...data, lastUpdated: Date.now() };
+    this.set('lesson_notes', notes);
+  },
+
+  getAllNotes() {
+    return this.get('lesson_notes', {});
+  },
+
   // Export / Import
   exportAll() {
     const data = {};

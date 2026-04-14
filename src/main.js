@@ -1,4 +1,4 @@
-// FinanceOS - Main Application Entry Point
+// Achievers - Main Application Entry Point
 import { Router } from './utils/router.js';
 import { Storage } from './utils/storage.js';
 import { Dates } from './utils/dates.js';
@@ -9,6 +9,7 @@ import { financeCurriculum } from './data/finance-curriculum.js';
 import { businessCurriculum } from './data/business-curriculum.js';
 import { marketCurriculum } from './data/market-curriculum.js';
 import { sipWatchlist } from './data/sip-watchlist.js';
+import { classificationSystems, gicsSectors, naicsSectors, icbIndustries, sicDivisions, isicSections } from './data/sectors-data.js';
 
 // ============ GLOBALS ============
 const router = new Router();
@@ -364,6 +365,7 @@ function renderLesson(lessonId) {
   document.getElementById('topbar-breadcrumb').textContent = `${meta.name} → ${lesson.module}`;
 
   const c = lesson.content;
+  const notesData = Storage.getLessonNotes(lessonId);
   const content = document.getElementById('app-content');
   content.innerHTML = `
     <div class="lesson-container animate-fade-in">
@@ -420,25 +422,24 @@ function renderLesson(lessonId) {
         </div>
       </div>
 
-      <!-- Quiz -->
+      <!-- Learning Resources -->
+      ${c.learningResources && c.learningResources.length ? `
       <div class="lesson-section">
-        <div class="lesson-section-title">🧠 Quick Quiz</div>
-        <div id="quiz-container">
-          ${c.quiz.map((q, qi) => `
-            <div class="card mb-4" id="quiz-${qi}">
-              <div class="font-bold mb-4">${qi + 1}. ${q.q}</div>
-              <div class="flex flex-col gap-2">
-                ${q.options.map((opt, oi) => `
-                  <div class="lesson-quiz-option" onclick="window.checkQuiz(${qi}, ${oi}, ${q.answer}, '${lessonId}')">
-                    <div class="lesson-quiz-option-marker">${String.fromCharCode(65 + oi)}</div>
-                    <span>${opt}</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `).join('')}
+        <div class="lesson-section-title">📚 Learning Resources</div>
+        <div class="card card-lg">
+          <ul style="list-style:none;padding:0">
+            ${c.learningResources.map(r => `<li style="padding:6px 0;display:flex;gap:8px"><span style="color:${meta.accent}">📖</span> <span class="lesson-section-content">${r}</span></li>`).join('')}
+          </ul>
         </div>
       </div>
+      ` : `
+      <div class="lesson-section">
+        <div class="lesson-section-title">📚 Learning Resources</div>
+        <div class="card card-lg" style="opacity:0.6">
+          <div class="text-muted text-sm" style="font-style:italic">Learning resources will be added soon. Check back later!</div>
+        </div>
+      </div>
+      `}
 
       <!-- Key Takeaways -->
       <div class="lesson-section">
@@ -447,6 +448,26 @@ function renderLesson(lessonId) {
           <ul style="list-style:none;padding:0">
             ${c.keyTakeaways.map(t => `<li style="padding:6px 0;display:flex;gap:8px"><span style="color:${meta.accent}">→</span> ${t}</li>`).join('')}
           </ul>
+        </div>
+      </div>
+
+      <!-- Notes & Journal -->
+      <div class="lesson-section notes-section">
+        <div class="lesson-section-title">📝 Your Learning Journal</div>
+        <div class="card card-lg">
+          <textarea class="notes-textarea" id="lesson-notes" placeholder="Write your thoughts, reflections, key takeaways, questions, and ideas about this topic...">${notesData.text || ''}</textarea>
+          <div class="notes-meta">
+            <div class="notes-auto-save">
+              <div class="notes-auto-save-dot"></div>
+              <span id="notes-timestamp">${notesData.lastUpdated ? 'Last saved ' + new Date(notesData.lastUpdated).toLocaleString() : 'Auto-saves as you type'}</span>
+            </div>
+            <button class="ai-analyze-btn" id="ai-analyze-btn" onclick="window.analyzeNotes('${lessonId}')">
+              🤖 Analyze with AI
+            </button>
+          </div>
+          <div id="ai-response-container">
+            ${notesData.aiResponse ? renderAIResponse(notesData.aiResponse) : ''}
+          </div>
         </div>
       </div>
 
@@ -464,6 +485,23 @@ function renderLesson(lessonId) {
       </div>
     </div>
   `;
+
+  // Setup notes auto-save
+  const notesTextarea = content.querySelector('#lesson-notes');
+  if (notesTextarea) {
+    let saveTimeout;
+    notesTextarea.addEventListener('input', () => {
+      const dot = content.querySelector('.notes-auto-save-dot');
+      if (dot) dot.classList.add('saving');
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        Storage.setLessonNotes(lessonId, { text: notesTextarea.value });
+        if (dot) dot.classList.remove('saving');
+        const ts = content.querySelector('#notes-timestamp');
+        if (ts) ts.textContent = 'Saved just now';
+      }, 800);
+    });
+  }
 }
 
 function formatContent(text) {
@@ -510,6 +548,77 @@ window.completeLesson = function(lessonId) {
   }
   updateNavBadges();
   renderLesson(lessonId);
+};
+
+// Render AI response panel
+function renderAIResponse(response) {
+  if (!response || !response.insights) return '';
+  const ai = response.insights;
+  return `
+    <div class="ai-response-panel">
+      <div class="ai-response-header">🤖 AI Analysis</div>
+      ${ai.encouragement ? `<div class="text-sm" style="color:var(--accent-business);margin-bottom:16px;font-style:italic">${ai.encouragement}</div>` : ''}
+      <div class="ai-response-section">
+        <div class="ai-response-section-title">💡 Key Insights</div>
+        <div class="ai-response-content"><ul>${(ai.keyInsights||[]).map(i => `<li>${i}</li>`).join('')}</ul></div>
+      </div>
+      <div class="ai-response-section">
+        <div class="ai-response-section-title">📋 Next Steps</div>
+        <div class="ai-response-content"><ul>${(ai.nextSteps||[]).map(s => `<li>${s}</li>`).join('')}</ul></div>
+      </div>
+      <div class="ai-response-section">
+        <div class="ai-response-section-title">🛠️ Implementation Ideas</div>
+        <div class="ai-response-content"><ul>${(ai.implementationIdeas||[]).map(i => `<li>${i}</li>`).join('')}</ul></div>
+      </div>
+      <div class="text-xs text-muted mt-4">Analyzed ${response.analyzedAt ? new Date(response.analyzedAt).toLocaleString() : 'recently'}</div>
+    </div>
+  `;
+}
+
+// Analyze notes with Gemini
+window.analyzeNotes = async function(lessonId) {
+  const textarea = document.getElementById('lesson-notes');
+  const btn = document.getElementById('ai-analyze-btn');
+  const container = document.getElementById('ai-response-container');
+  if (!textarea || !btn || !container) return;
+
+  const notes = textarea.value.trim();
+  if (!notes || notes.length < 20) {
+    showToast('Please write at least a few sentences in your notes before analyzing.', 'warning');
+    return;
+  }
+
+  // Find lesson context
+  let lesson = null, cat = null;
+  for (const [key, arr] of Object.entries(curricula)) {
+    const found = arr.find(l => l.id === lessonId);
+    if (found) { lesson = found; cat = key; break; }
+  }
+  if (!lesson) return;
+
+  // Show loading
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Analyzing...';
+  container.innerHTML = '<div class="ai-response-panel" style="text-align:center;padding:32px"><div class="loading-spinner" style="margin:0 auto"></div><div class="text-muted text-sm mt-4">AI is analyzing your notes...</div></div>';
+
+  const result = await API.analyzeNotesWithLLM(notes, {
+    title: lesson.title,
+    module: lesson.module,
+    category: categoryMeta[cat]?.name || cat
+  });
+
+  btn.disabled = false;
+  btn.innerHTML = '🤖 Analyze with AI';
+
+  if (result.error) {
+    container.innerHTML = `<div class="ai-response-panel" style="border-color:rgba(248,113,113,0.3)"><div class="text-sm" style="color:var(--color-danger)">${result.message}</div></div>`;
+    showToast(result.message, 'error');
+  } else {
+    // Save AI response with notes
+    Storage.setLessonNotes(lessonId, { text: notes, aiResponse: result });
+    container.innerHTML = renderAIResponse(result);
+    showToast('AI analysis complete! 🧠');
+  }
 };
 
 // ============ PAGE: AI NEWS ============
@@ -1050,6 +1159,10 @@ function renderSettings() {
           <label class="form-label">NewsData.io API Key <a href="https://newsdata.io/" target="_blank" class="text-xs">(get free key)</a></label>
           <input type="password" class="form-input" placeholder="Enter NewsData.io API key..." value="${settings.newsApiKey || ''}" onchange="window.updateSetting('newsApiKey', this.value)">
         </div>
+        <div class="form-group">
+          <label class="form-label">Gemini API Key <a href="https://aistudio.google.com/apikey" target="_blank" class="text-xs">(get free key)</a></label>
+          <input type="password" class="form-input" placeholder="Enter Gemini API key for AI journal analysis..." value="${settings.geminiApiKey || ''}" onchange="window.updateSetting('geminiApiKey', this.value)">
+        </div>
       </div>
 
       <!-- Notifications -->
@@ -1080,11 +1193,11 @@ function renderSettings() {
 
       <!-- About -->
       <div class="card">
-        <div class="font-bold text-lg mb-4">ℹ️ About FinanceOS</div>
+        <div class="font-bold text-lg mb-4">ℹ️ About Achievers</div>
         <div class="text-sm text-muted">
-          <p>A comprehensive daily learning platform for Finance, Business, Stock Market, AI News, and Investment Analysis.</p>
+          <p>Achievers — A comprehensive daily learning & growth platform for Finance, Business, Stock Market, AI News, and Investment Analysis.</p>
           <p class="mt-2">All data is stored locally in your browser. No account required.</p>
-          <p class="mt-2 font-mono text-xs">Version 1.0.0 · Built with ❤️</p>
+          <p class="mt-2 font-mono text-xs">Version 2.0.0 · Built with ❤️</p>
         </div>
       </div>
     </div>
@@ -1125,7 +1238,7 @@ window.exportData = function() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `financeos-backup-${Dates.today()}.json`;
+  a.download = `achievers-backup-${Dates.today()}.json`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('Data exported successfully!');
@@ -1164,6 +1277,291 @@ window.resetAllData = function() {
 // Make Storage available for the reset button
 window.Storage = Storage;
 
+// ============ PAGE: SECTORS & INDUSTRIES ============
+function renderSectors() {
+  document.getElementById('topbar-title').textContent = 'Sectors & Industries';
+  document.getElementById('topbar-breadcrumb').textContent = 'Classification Systems & Sector Analysis';
+
+  const content = document.getElementById('app-content');
+  content.innerHTML = `
+    <div class="animate-fade-in">
+      <!-- Intro -->
+      <div class="card mb-6" style="background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(236,72,153,0.08))">
+        <div class="flex items-center gap-3 mb-4">
+          <div style="font-size:2rem">🏢</div>
+          <div>
+            <div class="section-title">Industry Classification Systems</div>
+            <div class="section-subtitle">Understanding how the global economy is organized</div>
+          </div>
+        </div>
+        <div class="lesson-section-content">
+          Companies worldwide are classified into sectors and industries using standardized systems. Understanding these classifications is essential for <strong>portfolio diversification</strong>, <strong>sector rotation strategies</strong>, and <strong>comparative analysis</strong>. Below are the 5 major classification systems used globally.
+        </div>
+      </div>
+
+      <!-- Classification Systems Comparison -->
+      <div class="card mb-6 animate-slide-up">
+        <div class="section-title mb-4">📊 Classification Systems Comparison</div>
+        <div class="table-wrapper">
+          <table class="classification-table">
+            <thead>
+              <tr><th>System</th><th>Created By</th><th>Structure</th><th>Sectors/Divisions</th><th>Primary Use</th></tr>
+            </thead>
+            <tbody>
+              ${classificationSystems.map(sys => `
+                <tr>
+                  <td><div class="flex items-center gap-2"><span>${sys.icon}</span> <strong>${sys.name}</strong></div></td>
+                  <td class="text-sm">${sys.createdBy}</td>
+                  <td class="text-sm" style="color:var(--text-secondary)">${sys.structure}</td>
+                  <td><span class="badge badge-news">${sys.count}</span></td>
+                  <td class="text-sm text-muted">${sys.useCases[0]}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Classification System Detail Cards -->
+      <div class="grid grid-auto mb-6 stagger">
+        ${classificationSystems.map(sys => `
+          <div class="card card-sm">
+            <div class="flex items-center gap-2 mb-2">
+              <span style="font-size:1.3rem">${sys.icon}</span>
+              <div>
+                <div class="font-bold">${sys.name}</div>
+                <div class="text-xs text-muted">${sys.fullName}</div>
+              </div>
+            </div>
+            <div class="text-sm" style="color:var(--text-secondary);line-height:1.6">${sys.description.substring(0, 200)}...</div>
+            <div class="flex flex-wrap gap-1 mt-3">
+              ${sys.useCases.slice(0, 3).map(u => `<span class="tag" style="pointer-events:none;font-size:0.7rem">${u}</span>`).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- GICS Sectors Grid -->
+      <div class="section-header mb-2">
+        <div>
+          <div class="section-title">🌐 GICS Sectors — Deep Dive</div>
+          <div class="section-subtitle">Click any sector to explore its analysis framework, key metrics, and top companies</div>
+        </div>
+        <span class="badge badge-news">${gicsSectors.length} Sectors</span>
+      </div>
+      <div class="sector-grid stagger">
+        ${gicsSectors.map(sector => `
+          <a class="sector-card" href="#sector/${sector.id}" style="text-decoration:none;color:inherit">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${sector.color};border-radius:14px 14px 0 0;opacity:0.8"></div>
+            <div class="sector-card-icon">${sector.icon}</div>
+            <div class="sector-card-name">${sector.name}</div>
+            <div class="sector-card-code">GICS ${sector.gicsCode} · ${sector.industries.length} industries</div>
+            <div class="sector-card-industries">${sector.industryGroups.join(' · ')}</div>
+            <div class="flex flex-wrap gap-1 mt-3">
+              ${sector.growthDrivers.slice(0, 2).map(d => `<span class="tag" style="pointer-events:none;font-size:0.65rem;border-color:${sector.color}30;color:${sector.color}">${d.split(' ').slice(0, 3).join(' ')}</span>`).join('')}
+            </div>
+          </a>
+        `).join('')}
+      </div>
+
+      <!-- Reference Tables -->
+      <div class="card mt-6 animate-slide-up">
+        <div class="section-title mb-4">📋 Reference: NAICS Sectors (20)</div>
+        <div class="table-wrapper">
+          <table class="classification-table">
+            <thead><tr><th>Code</th><th>Sector Name</th></tr></thead>
+            <tbody>
+              ${naicsSectors.map(s => `<tr><td><span class="font-mono font-bold">${s.code}</span></td><td>${s.name}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid grid-2 mt-4 stagger">
+        <div class="card">
+          <div class="font-bold mb-4">🇬🇧 ICB Industries (11)</div>
+          <div class="table-wrapper">
+            <table class="classification-table">
+              <thead><tr><th>Code</th><th>Industry</th></tr></thead>
+              <tbody>
+                ${icbIndustries.map(s => `<tr><td><span class="font-mono">${s.code}</span></td><td class="text-sm">${s.name}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="font-bold mb-4">🏛️ SIC Divisions (10)</div>
+          <div class="table-wrapper">
+            <table class="classification-table">
+              <thead><tr><th>Div</th><th>Name</th><th>Range</th></tr></thead>
+              <tbody>
+                ${sicDivisions.map(s => `<tr><td><span class="font-mono font-bold">${s.code}</span></td><td class="text-sm">${s.name}</td><td class="font-mono text-xs text-muted">${s.range}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ============ PAGE: SECTOR DETAIL ============
+function renderSectorDetail(sectorId) {
+  const sector = gicsSectors.find(s => s.id === sectorId);
+  if (!sector) {
+    document.getElementById('app-content').innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏢</div><div class="empty-state-title">Sector not found</div><div class="empty-state-desc"><a href="#sectors">Back to Sectors</a></div></div>';
+    return;
+  }
+
+  document.getElementById('topbar-title').textContent = sector.name;
+  document.getElementById('topbar-breadcrumb').textContent = `Sectors & Industries → GICS ${sector.gicsCode}`;
+
+  const content = document.getElementById('app-content');
+  content.innerHTML = `
+    <div class="animate-fade-in">
+      <a href="#sectors" class="btn btn-secondary btn-sm mb-4" style="text-decoration:none">← Back to Sectors</a>
+
+      <!-- Sector Header -->
+      <div class="sector-detail-header" style="background:linear-gradient(135deg, ${sector.colorDim}, transparent)">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:${sector.color};opacity:0.8"></div>
+        <div class="flex items-center gap-4 mb-4">
+          <div style="font-size:3rem">${sector.icon}</div>
+          <div>
+            <div class="sector-detail-title" style="color:${sector.color}">${sector.name}</div>
+            <span class="badge" style="background:${sector.colorDim};color:${sector.color}">GICS ${sector.gicsCode}</span>
+            <span class="badge badge-news ml-auto">${sector.overview.marketCap}</span>
+          </div>
+        </div>
+        <div class="sector-detail-desc">${sector.overview.description}</div>
+      </div>
+
+      <!-- Sub-tabs -->
+      <div class="sector-sub-tabs">
+        <button class="sector-sub-tab active" onclick="window.showSectorTab('overview', '${sectorId}', this)">📖 Overview</button>
+        <button class="sector-sub-tab" onclick="window.showSectorTab('metrics', '${sectorId}', this)">📊 Key Metrics</button>
+        <button class="sector-sub-tab" onclick="window.showSectorTab('framework', '${sectorId}', this)">🔍 Analysis Framework</button>
+      </div>
+
+      <div id="sector-tab-content"></div>
+    </div>
+  `;
+
+  window.showSectorTab('overview', sectorId, document.querySelector('.sector-sub-tab.active'));
+}
+
+window.showSectorTab = function(tab, sectorId, btn) {
+  const sector = gicsSectors.find(s => s.id === sectorId);
+  if (!sector) return;
+
+  document.querySelectorAll('.sector-sub-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const container = document.getElementById('sector-tab-content');
+
+  if (tab === 'overview') {
+    container.innerHTML = `
+      <div class="stagger">
+        <!-- Characteristics -->
+        <div class="card mb-6">
+          <div class="font-bold text-lg mb-4" style="color:${sector.color}">📋 Key Characteristics</div>
+          <div class="flex flex-col gap-2">
+            ${sector.overview.keyCharacteristics.map(c => `
+              <div class="flex items-center gap-3" style="padding:8px 0;border-bottom:1px solid var(--border-primary)">
+                <span style="color:${sector.color}">→</span>
+                <span class="lesson-section-content text-sm">${c}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Industry Groups -->
+        <div class="card mb-6">
+          <div class="font-bold text-lg mb-4">🔗 Industry Groups & Industries</div>
+          <div class="mb-4">
+            <div class="text-xs text-muted font-bold mb-2" style="text-transform:uppercase;letter-spacing:1px">Industry Groups (${sector.industryGroups.length})</div>
+            <div class="flex flex-wrap gap-2">
+              ${sector.industryGroups.map(g => `<span class="badge" style="background:${sector.colorDim};color:${sector.color}">${g}</span>`).join('')}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-muted font-bold mb-2" style="text-transform:uppercase;letter-spacing:1px">Industries (${sector.industries.length})</div>
+            <div class="flex flex-wrap gap-2">
+              ${sector.industries.map(i => `<span class="tag" style="pointer-events:none">${i}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Companies -->
+        <div class="card mb-6">
+          <div class="font-bold text-lg mb-4">🏆 Top Companies</div>
+          <div class="grid grid-3 gap-4">
+            ${sector.topCompanies.map(c => `
+              <div class="card card-sm" style="border-left:3px solid ${sector.color}">
+                <div class="font-bold text-sm">${c.name}</div>
+                <span class="badge badge-news" style="margin:4px 0">${c.region}</span>
+                <div class="text-xs text-muted">${c.note}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Growth & Risk -->
+        <div class="grid grid-2 gap-4">
+          <div class="card" style="border-left:3px solid var(--color-success)">
+            <div class="font-bold mb-4" style="color:var(--color-success)">📈 Growth Drivers</div>
+            <ul style="list-style:none;padding:0">
+              ${sector.growthDrivers.map(d => `<li style="padding:6px 0;display:flex;gap:8px"><span style="color:var(--color-success)">↑</span> <span class="text-sm">${d}</span></li>`).join('')}
+            </ul>
+          </div>
+          <div class="card" style="border-left:3px solid var(--color-danger)">
+            <div class="font-bold mb-4" style="color:var(--color-danger)">⚠️ Risk Factors</div>
+            <ul style="list-style:none;padding:0">
+              ${sector.riskFactors.map(r => `<li style="padding:6px 0;display:flex;gap:8px"><span style="color:var(--color-danger)">↓</span> <span class="text-sm">${r}</span></li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (tab === 'metrics') {
+    container.innerHTML = `
+      <div class="stagger">
+        <div class="card mb-6" style="background:linear-gradient(135deg, ${sector.colorDim}, transparent)">
+          <div class="font-bold" style="color:${sector.color}">📊 Key Metrics for ${sector.name} Sector Analysis</div>
+          <div class="text-sm text-muted mt-2">These are the essential financial metrics you need to evaluate companies in the ${sector.name} sector</div>
+        </div>
+        <div class="grid grid-2 gap-4">
+          ${sector.keyMetrics.map((m, i) => `
+            <div class="metric-card animate-slide-up" style="border-left:3px solid ${sector.color};animation-delay:${i * 0.05}s">
+              <div class="metric-card-name" style="color:${sector.color}">${m.name}</div>
+              <div class="metric-card-desc">${m.description}</div>
+              <div class="metric-card-formula">📐 ${m.formula}</div>
+              <div class="metric-card-benchmark">🎯 Benchmark: ${m.benchmark}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } else if (tab === 'framework') {
+    const fw = sector.analysisFramework;
+    const steps = [fw.step1, fw.step2, fw.step3, fw.step4, fw.step5].filter(Boolean);
+    container.innerHTML = `
+      <div class="stagger">
+        <div class="card mb-6" style="background:linear-gradient(135deg, ${sector.colorDim}, transparent)">
+          <div class="font-bold" style="color:${sector.color}">🔍 5-Step Analysis Framework for ${sector.name}</div>
+          <div class="text-sm text-muted mt-2">Follow this systematic framework to analyze any company in the ${sector.name} sector</div>
+        </div>
+        ${steps.map((step, i) => `
+          <div class="framework-step" style="border-left-color:${sector.color}">
+            <div class="framework-step-number" style="color:${sector.color}">Step ${i + 1}</div>
+            <div class="framework-step-title">${step.title}</div>
+            <div class="framework-step-desc">${step.description}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+};
+
 // ============ ROUTER SETUP ============
 router.addRoute('dashboard', renderDashboard);
 router.addRoute('learning', renderLearning);
@@ -1172,6 +1570,8 @@ router.addRoute('news', renderNews);
 router.addRoute('market', renderMarket);
 router.addRoute('tracker', renderTracker);
 router.addRoute('settings', renderSettings);
+router.addRoute('sectors', renderSectors);
+router.addRoute('sector', renderSectorDetail);
 
 // ============ INITIALIZATION ============
 let initialized = false;
@@ -1213,7 +1613,7 @@ function init() {
     // Initialize router
     router.init();
 
-    console.log('FinanceOS initialized successfully ✓');
+    console.log('Achievers initialized successfully ✓');
   } catch(err) {
     console.error('Init error:', err);
     document.getElementById('app-content').innerHTML = `

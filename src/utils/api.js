@@ -276,5 +276,87 @@ export const API = {
       JNJ: { name: 'Johnson & Johnson', ticker: 'JNJ', exchange: 'NYSE', ipo: '1944-09-25', marketCapitalization: 380000, finnhubIndustry: 'Healthcare', weburl: 'https://jnj.com', logo: '' }
     };
     return profiles[symbol] || { name: symbol, ticker: symbol, exchange: 'N/A', finnhubIndustry: 'N/A' };
+  },
+
+  // ============ GEMINI AI INTEGRATION ============
+  async analyzeNotesWithLLM(notes, lessonContext) {
+    const settings = Storage.getSettings();
+    const apiKey = settings.geminiApiKey;
+    
+    if (!apiKey) {
+      return {
+        error: true,
+        message: 'Please add your Gemini API key in Settings to use AI analysis.',
+        insights: null
+      };
+    }
+
+    const prompt = `You are an expert finance and business mentor analyzing a student's learning journal notes. The student is studying a topic and has written personal notes about what they're learning. Analyze their notes and provide actionable guidance.
+
+LESSON CONTEXT:
+- Title: ${lessonContext.title}
+- Module: ${lessonContext.module}
+- Category: ${lessonContext.category}
+
+STUDENT'S NOTES:
+${notes}
+
+Please provide your analysis in the following JSON format (return ONLY valid JSON, no markdown):
+{
+  "keyInsights": ["insight 1", "insight 2", "insight 3"],
+  "nextSteps": ["step 1", "step 2", "step 3"],
+  "implementationIdeas": ["idea 1", "idea 2", "idea 3"],
+  "encouragement": "A brief motivational message about their learning progress"
+}
+
+Guidelines:
+- Key Insights: Identify the most important takeaways from their notes, connections they're making, or areas they should explore deeper
+- Next Steps: Suggest concrete actions they can take in the next 7 days based on their learning
+- Implementation Ideas: Practical ways to apply this knowledge in real life (investing, career, business)
+- Keep each point concise but actionable (1-2 sentences max)
+- Be specific to their actual notes, not generic advice`;
+
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `API error: ${res.status}`);
+      }
+
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!text) {
+        throw new Error('Empty response from Gemini');
+      }
+
+      // Parse JSON from response (strip markdown code fences if present)
+      const jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(jsonStr);
+      
+      return {
+        error: false,
+        insights: parsed,
+        analyzedAt: Date.now()
+      };
+    } catch (e) {
+      console.error('Gemini API error:', e);
+      return {
+        error: true,
+        message: `AI analysis failed: ${e.message}. Please check your API key in Settings.`,
+        insights: null
+      };
+    }
   }
 };
