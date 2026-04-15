@@ -95,22 +95,52 @@ export const Storage = {
   },
 
   updateStreak(dateStr) {
-    const streak = this.getStreak();
-    const yesterday = new Date(dateStr);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    return this.recalculateStreak();
+  },
 
-    if (streak.lastActiveDate === dateStr) return streak;
+  recalculateStreak() {
+    const log = this.get('activity_log', {});
+    const activeDates = Object.keys(log).filter(d => log[d] > 0).sort();
     
-    if (streak.lastActiveDate === yesterdayStr) {
-      streak.current += 1;
-    } else if (streak.lastActiveDate !== dateStr) {
-      streak.current = 1;
+    let current = 0;
+    let longest = 0;
+    let lastActiveDate = null;
+    
+    if (activeDates.length > 0) {
+      let streak = 1;
+      longest = 1;
+      
+      for (let i = 1; i < activeDates.length; i++) {
+        const d1 = new Date(activeDates[i-1] + 'T00:00:00');
+        const d2 = new Date(activeDates[i] + 'T00:00:00');
+        const diffDays = Math.round((d2 - d1) / 86400000);
+        
+        if (diffDays === 1) {
+          streak++;
+          longest = Math.max(longest, streak);
+        } else if (diffDays > 1) {
+          streak = 1;
+        }
+      }
+      
+      const today = new Date().toISOString().split('T')[0];
+      const yesterdayDate = new Date();
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterday = yesterdayDate.toISOString().split('T')[0];
+      
+      const lastDate = activeDates[activeDates.length - 1];
+      if (lastDate === today || lastDate === yesterday) {
+        current = streak;
+        lastActiveDate = lastDate;
+      } else {
+        current = 0;
+        lastActiveDate = null;
+      }
     }
-    streak.longest = Math.max(streak.longest, streak.current);
-    streak.lastActiveDate = dateStr;
-    this.set('streak', streak);
-    return streak;
+    
+    const streakObj = { current, longest, lastActiveDate };
+    this.set('streak', streakObj);
+    return streakObj;
   },
 
   // Activity log for heat map
@@ -118,6 +148,19 @@ export const Storage = {
     const log = this.get('activity_log', {});
     log[dateStr] = (log[dateStr] || 0) + 1;
     this.set('activity_log', log);
+    this.recalculateStreak();
+  },
+
+  unlogActivity(dateStr) {
+    const log = this.get('activity_log', {});
+    if (log[dateStr]) {
+      log[dateStr] -= 1;
+      if (log[dateStr] <= 0) {
+        delete log[dateStr];
+      }
+    }
+    this.set('activity_log', log);
+    this.recalculateStreak();
   },
 
   getActivityLog() {

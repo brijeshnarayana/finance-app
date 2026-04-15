@@ -1,135 +1,147 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Achievers — A comprehensive daily learning & growth platform for Finance, Business, Stock Market, AI News, and Investment Analysis.">
-  <title>Achievers — Daily Learning & Growth Platform</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="src/styles/index.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
-</head>
-<body>
-  <div class="app-layout" id="app">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-logo">
-          <div class="sidebar-logo-icon">🏆</div>
-          <div class="sidebar-logo-text"><span>Achie</span>vers</div>
-        </div>
-      </div>
-      <nav class="sidebar-nav">
-        <div class="nav-section-label">Overview</div>
-        <a class="nav-item active" data-page="dashboard" href="#dashboard">
-          <span class="nav-item-icon">🏠</span>
-          <span>Dashboard</span>
-        </a>
-
-        <div class="nav-section-label">Learning</div>
-        <a class="nav-item" data-page="learning" href="#learning/fin">
-          <span class="nav-item-icon">💰</span>
-          <span>Finance & Economics</span>
-          <span class="nav-item-badge" id="nav-badge-fin">0%</span>
-        </a>
-        <a class="nav-item" data-page="learning-biz" href="#learning/biz">
-          <span class="nav-item-icon">🚀</span>
-          <span>Business & Startups</span>
-          <span class="nav-item-badge" id="nav-badge-biz">0%</span>
-        </a>
-        <a class="nav-item" data-page="learning-mkt" href="#learning/mkt">
-          <span class="nav-item-icon">📈</span>
-          <span>Stock Market</span>
-          <span class="nav-item-badge" id="nav-badge-mkt">0%</span>
-        </a>
-        <a class="nav-item" data-page="sectors" href="#sectors">
-          <span class="nav-item-icon">🏢</span>
-          <span>Sectors & Industries</span>
-        </a>
-
-        <div class="nav-section-label">Intelligence</div>
-        <a class="nav-item" data-page="news" href="#news">
-          <span class="nav-item-icon">🤖</span>
-          <span>AI News</span>
-        </a>
-        <a class="nav-item" data-page="market" href="#market">
-          <span class="nav-item-icon">📊</span>
-          <span>Stock Analysis</span>
-        </a>
-
-        <div class="nav-section-label">Tracking</div>
-        <a class="nav-item" data-page="tracker" href="#tracker">
-          <span class="nav-item-icon">🎯</span>
-          <span>Goal Tracker</span>
-        </a>
-
-        <div class="nav-section-label">System</div>
-        <a class="nav-item" data-page="settings" href="#settings">
-          <span class="nav-item-icon">⚙️</span>
-          <span>Settings</span>
-        </a>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="streak-badge" id="streak-badge">
-          <span class="streak-badge-icon">🔥</span>
-          <div>
-            <div class="streak-badge-count" id="streak-count">0</div>
-            <div class="streak-badge-label">Day Streak</div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="FinBizz — A comprehensive daily learning & growth platform for Finance, Business, Stock Market, AI News, and Investment Analysis."
+    />
+    <title>FinBizz — Daily Learning & Growth Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="src/styles/index.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="app-layout" id="app">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">
+            <div class="sidebar-logo-icon">🏆</div>
+            <div class="sidebar-logo-text"><span>Fin</span>Bizz</div>
           </div>
         </div>
-      </div>
-    </aside>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Overview</div>
+          <a class="nav-item active" data-page="dashboard" href="#dashboard">
+            <span class="nav-item-icon">🏠</span>
+            <span>Dashboard</span>
+          </a>
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <header class="topbar">
-        <div class="topbar-left">
-          <button class="menu-toggle" id="menu-toggle">☰</button>
-          <div>
-            <div class="topbar-title" id="topbar-title">Dashboard</div>
-            <div class="topbar-breadcrumb" id="topbar-breadcrumb"></div>
+          <div class="nav-section-label">Learning</div>
+          <a class="nav-item" data-page="learning" href="#learning/fin">
+            <span class="nav-item-icon">💰</span>
+            <span>Finance & Economics</span>
+            <span class="nav-item-badge" id="nav-badge-fin">0%</span>
+          </a>
+          <a class="nav-item" data-page="learning-biz" href="#learning/biz">
+            <span class="nav-item-icon">🚀</span>
+            <span>Business & Startups</span>
+            <span class="nav-item-badge" id="nav-badge-biz">0%</span>
+          </a>
+          <a class="nav-item" data-page="learning-mkt" href="#learning/mkt">
+            <span class="nav-item-icon">📈</span>
+            <span>Stock Market</span>
+            <span class="nav-item-badge" id="nav-badge-mkt">0%</span>
+          </a>
+          <a class="nav-item" data-page="sectors" href="#sectors">
+            <span class="nav-item-icon">🏢</span>
+            <span>Sectors & Industries</span>
+          </a>
+
+          <div class="nav-section-label">Intelligence</div>
+          <a class="nav-item" data-page="news" href="#news">
+            <span class="nav-item-icon">🤖</span>
+            <span>AI News</span>
+          </a>
+          <a class="nav-item" data-page="market" href="#market">
+            <span class="nav-item-icon">📊</span>
+            <span>Stock Analysis</span>
+          </a>
+
+          <div class="nav-section-label">Tracking</div>
+          <a class="nav-item" data-page="tracker" href="#tracker">
+            <span class="nav-item-icon">🎯</span>
+            <span>Goal Tracker</span>
+          </a>
+
+          <div class="nav-section-label">System</div>
+          <a class="nav-item" data-page="settings" href="#settings">
+            <span class="nav-item-icon">⚙️</span>
+            <span>Settings</span>
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="streak-badge" id="streak-badge">
+            <span class="streak-badge-icon">🔥</span>
+            <div>
+              <div class="streak-badge-count" id="streak-count">0</div>
+              <div class="streak-badge-label">Day Streak</div>
+            </div>
           </div>
         </div>
-        <div class="topbar-right">
-          <div class="topbar-date" id="topbar-date"></div>
-        </div>
-      </header>
-      <div id="app-content">
-        <!-- Page content rendered here by router -->
-        <div class="empty-state">
-          <div class="loading-spinner" style="margin: 0 auto;"></div>
-          <p class="mt-4 text-muted">Loading...</p>
-        </div>
-      </div>
-    </main>
-  </div>
+      </aside>
 
-  <!-- Toast container -->
-  <div class="toast-container" id="toast-container"></div>
-  
-  <!-- Modal overlay -->
-  <div class="modal-overlay" id="modal-overlay">
-    <div class="modal" id="modal-content"></div>
-  </div>
+      <!-- Main Content -->
+      <main class="main-content">
+        <header class="topbar">
+          <div class="topbar-left">
+            <button class="menu-toggle" id="menu-toggle">☰</button>
+            <div>
+              <div class="topbar-title" id="topbar-title">Dashboard</div>
+              <div class="topbar-breadcrumb" id="topbar-breadcrumb"></div>
+            </div>
+          </div>
+          <div class="topbar-right">
+            <div class="topbar-date" id="topbar-date"></div>
+          </div>
+        </header>
+        <div id="app-content">
+          <!-- Page content rendered here by router -->
+          <div class="empty-state">
+            <div class="loading-spinner" style="margin: 0 auto"></div>
+            <p class="mt-4 text-muted">Loading...</p>
+          </div>
+        </div>
+      </main>
+    </div>
 
-  <script>
-    // Error detection for module loading issues
-    window.addEventListener('error', function(e) {
-      console.error('Global error:', e.message, e.filename);
-      var appContent = document.getElementById('app-content');
-      if (appContent && appContent.querySelector('.loading-spinner')) {
-        appContent.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Module Loading Error</div><div class="empty-state-desc">' + e.message + '<br>' + (e.filename || '') + '</div></div>';
-      }
-    });
-    // Fallback: if module doesn't load in 5s, show error
-    setTimeout(function() {
-      var appContent = document.getElementById('app-content');
-      if (appContent && appContent.querySelector('.loading-spinner')) {
-        appContent.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Module Failed to Load</div><div class="empty-state-desc">The ES module script could not be loaded. This may be a MIME type issue with the HTTP server.<br><br>Try using <code>Live Server</code> extension in VS Code, or install Node.js and run <code>npx -y serve</code></div></div>';
-      }
-    }, 5000);
-  </script>
-  <script type="module" src="src/main.js"></script>
-</body>
+    <!-- Toast container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Modal overlay -->
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal" id="modal-content"></div>
+    </div>
+
+    <script>
+      // Error detection for module loading issues
+      window.addEventListener("error", function (e) {
+        console.error("Global error:", e.message, e.filename);
+        var appContent = document.getElementById("app-content");
+        if (appContent && appContent.querySelector(".loading-spinner")) {
+          appContent.innerHTML =
+            '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Module Loading Error</div><div class="empty-state-desc">' +
+            e.message +
+            "<br>" +
+            (e.filename || "") +
+            "</div></div>";
+        }
+      });
+      // Fallback: if module doesn't load in 5s, show error
+      setTimeout(function () {
+        var appContent = document.getElementById("app-content");
+        if (appContent && appContent.querySelector(".loading-spinner")) {
+          appContent.innerHTML =
+            '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Module Failed to Load</div><div class="empty-state-desc">The ES module script could not be loaded. This may be a MIME type issue with the HTTP server.<br><br>Try using <code>Live Server</code> extension in VS Code, or install Node.js and run <code>npx -y serve</code></div></div>';
+        }
+      }, 5000);
+    </script>
+    <script type="module" src="src/main.js"></script>
+  </body>
 </html>
